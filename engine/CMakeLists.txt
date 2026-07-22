@@ -21,3 +21,5 @@ PUBLIC
     stb
     imgui
 )
+
+target_compile_definitions(app_core PRIVATE DEV_TOOLS)

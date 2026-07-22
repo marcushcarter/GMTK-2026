@@ -15,6 +15,9 @@ void Renderer::shutdown()
 
 void Renderer::request_resize(uint32_t w, uint32_t h)
 {
+    if (w == 0 || h == 0) return;
+    if (w == width && h == height) return;
+
     width = w;
     height = h;
     resize_requested = true;
@@ -22,7 +25,6 @@ void Renderer::request_resize(uint32_t w, uint32_t h)
 
 void Renderer::set_size()
 {
-
     resize_requested = false;
 }
 

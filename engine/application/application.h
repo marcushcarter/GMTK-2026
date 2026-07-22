@@ -21,4 +21,6 @@ struct Application
     bool create(const ApplicationCI& p_ci);
     void destroy();
     void run();
+
+    void _draw_ui();
 };

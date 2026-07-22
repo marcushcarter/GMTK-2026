@@ -1,4 +1,11 @@
 #include "application.h"
+#include <glad/glad.h>
+
+#ifdef DEV_TOOLS
+#include <imgui.h>
+#include <backends/imgui_impl_opengl3.h>
+#include <backends/imgui_impl_glfw.h>
+#endif
 
 bool Application::create(const ApplicationCI& p_ci)
 {
@@ -7,12 +14,26 @@ bool Application::create(const ApplicationCI& p_ci)
     
     main_scene.initialize();
     active_scene = &main_scene;
+
+#ifdef DEV_TOOLS
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGui::StyleColorsDark();
+    ImGui_ImplGlfw_InitForOpenGL(window.window, true);
+    ImGui_ImplOpenGL3_Init("#version 460");
+#endif
     
     return true;
 }
 
 void Application::destroy()
 {
+#ifdef DEV_TOOLS
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+#endif
+
     main_scene.shutdown();
 
     renderer.shutdown();
@@ -27,11 +48,31 @@ void Application::run()
 
         window.set_title(std::to_string(1.0f / active_scene->dt));
 
+#ifdef DEV_TOOLS
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        _draw_ui();
+#endif
+
         active_scene->update();
         renderer.render(active_scene);
+
+#ifdef DEV_TOOLS
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+#endif
 
         window.swap_buffers();
     }
 
     destroy();
 }
+
+// #ifdef DEV_TOOLS
+void Application::_draw_ui()
+{
+    ImGui::ShowDemoWindow();
+}
+// #endif

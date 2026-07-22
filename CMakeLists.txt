@@ -22,15 +22,4 @@ include(EmbedAssets)
 add_subdirectory(thirdparty)
 add_subdirectory(engine)
 
-set(BALLISTIC_GENERATED_DIR ${CMAKE_BINARY_DIR}/generated)
-file(MAKE_DIRECTORY ${BALLISTIC_GENERATED_DIR})
-
-app_generate_asset_rc(
-    ${BALLISTIC_GENERATED_DIR}/embedded_assets.rc
-    ${CMAKE_SOURCE_DIR}/assets/textures
-    ${CMAKE_SOURCE_DIR}/assets/shaders
-)
-
-set(BALLISTIC_ASSETS ${BALLISTIC_GENERATED_DIR}/embedded_assets.rc)
-
 add_subdirectory(platform/windows)

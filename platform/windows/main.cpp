@@ -14,5 +14,5 @@ int main()
     app.create(ci);
     return app.run();
 
-    return 0;    
+    return 0;
 }

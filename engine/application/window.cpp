@@ -25,6 +25,9 @@ bool Window::create(std::string_view p_title, int w, int h)
         return false;
     }
 
+    width = w;
+    height = h;
+
     return true;
 }
 

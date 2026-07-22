@@ -9,7 +9,7 @@
 
 bool Application::create(const ApplicationCI& p_ci)
 {
-    window.create(p_ci.title, p_ci.w, p_ci.w);
+    window.create(p_ci.title, p_ci.w, p_ci.h);
     renderer.initialize(&window);
     
     main_scene.initialize();
@@ -74,5 +74,12 @@ void Application::run()
 void Application::_draw_ui()
 {
     ImGui::ShowDemoWindow();
+
+    ImGui::Begin("Image Test");
+    ImGui::Text("size = %d x %d", renderer.width, renderer.height);
+    ImGui::Image((ImTextureID)(intptr_t)renderer.out_color,
+    ImVec2(renderer.width/10.0f, renderer.height/10.0f));
+    ImGui::End();
+
 }
 // #endif

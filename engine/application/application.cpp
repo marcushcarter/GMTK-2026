@@ -12,8 +12,8 @@ bool Application::create(const ApplicationCI& p_ci)
     window.create(p_ci.title, p_ci.w, p_ci.h);
     renderer.initialize(&window);
     
-    main_scene.initialize();
-    active_scene = &main_scene;
+    game_scene.initialize();
+    active_scene = &game_scene;
 
 #ifdef DEV_TOOLS
     IMGUI_CHECKVERSION();
@@ -34,7 +34,7 @@ void Application::destroy()
     ImGui::DestroyContext();
 #endif
 
-    main_scene.shutdown();
+    game_scene.shutdown();
 
     renderer.shutdown();
     window.destroy();

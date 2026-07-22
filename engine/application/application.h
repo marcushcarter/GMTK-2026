@@ -15,7 +15,7 @@ struct Application
     Window window;
     Renderer renderer;
 
-    Scene main_scene;
+    Scene game_scene;
     Scene* active_scene = nullptr;
 
     bool create(const ApplicationCI& p_ci);

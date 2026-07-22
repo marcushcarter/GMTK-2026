@@ -27,21 +27,21 @@ bool SpriteBatch::initialize()
     glCreateVertexArrays(1, &vao);
     glVertexArrayElementBuffer(vao, ibo);
     
-    glEnableVertexArrayAttrib (vao, 0);
-    glVertexArrayAttribFormat (vao, 0, 2, GL_FLOAT, GL_FALSE, offsetof(SpriteVertex, pos));
+    glEnableVertexArrayAttrib(vao, 0);
+    glVertexArrayAttribFormat(vao, 0, 2, GL_FLOAT, GL_FALSE, offsetof(SpriteVertex, pos));
     glVertexArrayAttribBinding(vao, 0, 0);
 
-    glEnableVertexArrayAttrib (vao, 1);
-    glVertexArrayAttribFormat (vao, 1, 2, GL_FLOAT, GL_FALSE, offsetof(SpriteVertex, uv));
+    glEnableVertexArrayAttrib(vao, 1);
+    glVertexArrayAttribFormat(vao, 1, 2, GL_FLOAT, GL_FALSE, offsetof(SpriteVertex, uv));
     glVertexArrayAttribBinding(vao, 1, 0);
 
-    glEnableVertexArrayAttrib (vao, 2);
-    glVertexArrayAttribFormat (vao, 2, 4, GL_UNSIGNED_BYTE, GL_TRUE, offsetof(SpriteVertex, color));
+    glEnableVertexArrayAttrib(vao, 2);
+    glVertexArrayAttribFormat(vao, 2, 4, GL_UNSIGNED_BYTE, GL_TRUE, offsetof(SpriteVertex, color));
     glVertexArrayAttribBinding(vao, 2, 0);
 
-    glEnableVertexArrayAttrib  (vao, 3);
-    glVertexArrayAttribIFormat (vao, 3, 1, GL_UNSIGNED_INT, offsetof(SpriteVertex, tex));
-    glVertexArrayAttribBinding (vao, 3, 0);
+    glEnableVertexArrayAttrib(vao, 3);
+    glVertexArrayAttribIFormat(vao, 3, 1, GL_UNSIGNED_INT, offsetof(SpriteVertex, tex));
+    glVertexArrayAttribBinding(vao, 3, 0);
 
     return true;
 }
@@ -78,17 +78,6 @@ void SpriteBatch::push(glm::vec2 min, glm::vec2 max, glm::vec2 uv_min, glm::vec2
     write += 4;
     count++;
 }
-
-// void SpriteBatch::push(glm::vec2 min, glm::vec2 max, const SpriteRegion& r, uint32_t color)
-// {
-//     push(min, max, r.uv_min, r.uv_max, color, r.tex);
-// }
-
-// void SpriteBatch::push_sprite(glm::vec2 origin, const SpriteRegion& r, uint32_t color)
-// {
-//     glm::vec2 min = origin + r.offset;
-//     push(min, min + r.size, r.uv_min, r.uv_max, color, r.tex);
-// }
 
 void SpriteBatch::flush()
 {

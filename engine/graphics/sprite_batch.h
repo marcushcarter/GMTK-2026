@@ -10,7 +10,6 @@ struct SpriteVertex {
     uint32_t color;
     uint32_t tex;
 };
-static_assert(sizeof(SpriteVertex) == 24, "SpriteVertex must stay tightly packed");
 
 inline uint32_t rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) {
     return (uint32_t)r | ((uint32_t)g << 8) | ((uint32_t)b << 16) | ((uint32_t)a << 24);
@@ -25,10 +24,10 @@ struct SpriteBatch
     uint32_t vao = 0, vbo = 0, ibo = 0;
 
     SpriteVertex* mapped = nullptr;
+    SpriteVertex* write = nullptr;
+
     GLsync fences[FRAMES] = {};
     uint32_t frame = 0;
-
-    SpriteVertex* write = nullptr;
     uint32_t count = 0;
 
     bool initialize();

@@ -78,7 +78,15 @@ bool Renderer::initialize(Window* p_window)
     sprite_program = _create_program(shaders, 2);
     }
 
-    if (!batch.initialize()) return false;
+    {
+    std::string c_s = load_file("assets/shaders/grayscale.comp");
+    uint32_t c = _compile_shader(c_s.c_str(), GL_COMPUTE_SHADER);
+    grayscale_program = _create_program(&c, 1);
+    post_programs.push_back(grayscale_program);
+    }
+
+    if (!sprite_batch.initialize()) return false;
+    if (!light_batch.initialize()) return false;
     // if (!atlas.initialize_white()) return false;
 
     request_resize(p_window->width, p_window->height);
@@ -90,15 +98,20 @@ bool Renderer::initialize(Window* p_window)
 void Renderer::shutdown()
 {   
     // atlas.shutdown();
-    batch.shutdown();
+    light_batch.shutdown();
+    sprite_batch.shutdown();
 
     glDeleteVertexArrays(1, &temp_vao);
 
-    glDeleteFramebuffers(1, &out_framebuffer);
-    glDeleteTextures(1, &out_color);
+    glDeleteFramebuffers(1, &scene_framebuffer);
+    glDeleteTextures(1, &scene_color);
+    for (uint32_t i = 0; i < 2; i++) {
+        glDeleteTextures(1, &post_color[i]);
+    }
 
     glDeleteProgram(blit_program);
     glDeleteProgram(sprite_program);
+    glDeleteProgram(grayscale_program);
 }
 
 void Renderer::request_resize(uint32_t w, uint32_t h)
@@ -112,20 +125,25 @@ void Renderer::request_resize(uint32_t w, uint32_t h)
 
 void Renderer::set_size()
 {
-    glDeleteTextures(1, &out_color);
-    glCreateTextures(GL_TEXTURE_2D, 1, &out_color);
-    glTextureStorage2D(out_color, 1, GL_RGBA8, width, height);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    auto create_texture = [&](uint32_t& tex) {
+        glDeleteTextures(1, &tex);
+        glCreateTextures(GL_TEXTURE_2D, 1, &tex);
+        glTextureStorage2D(tex, 1, GL_RGBA8, width, height);
+        glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    };
 
-    glDeleteFramebuffers(1, &out_framebuffer);
-    glCreateFramebuffers(1, &out_framebuffer);
-    glNamedFramebufferTexture(out_framebuffer, GL_COLOR_ATTACHMENT0, out_color, 0);
-    GLenum draw_buffers[1] = {GL_COLOR_ATTACHMENT0};
-    glNamedFramebufferDrawBuffers(out_framebuffer, 1, draw_buffers);
+    create_texture(scene_color);
+
+    for(int i = 0; i < 2; i++) {
+        create_texture(post_color[i]);
+    }
+
+    glDeleteFramebuffers(1, &scene_framebuffer);
+    glCreateFramebuffers(1, &scene_framebuffer);
+    glNamedFramebufferTexture(scene_framebuffer, GL_COLOR_ATTACHMENT0, scene_color, 0);
+    GLenum draw = GL_COLOR_ATTACHMENT0;
+    glNamedFramebufferDrawBuffers(scene_framebuffer, 1, &draw);
     
     resize_requested = false;
 }
@@ -136,7 +154,7 @@ void Renderer::render(Scene* scene)
 
     glViewport(0, 0, width, height);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, out_framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, scene_framebuffer);
     glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
@@ -145,28 +163,47 @@ void Renderer::render(Scene* scene)
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
     glm::vec4 scale_offset = scene->camera.clip_transform();
+    
     glUseProgram(sprite_program);
     glUniform4fv(0, 1, glm::value_ptr(scale_offset));
     // glBindTextureUnit(0, atlas.texture.id);
 
-    batch.begin();
+    sprite_batch.begin();
     glm::ivec4 r = scene->camera.visible_tile_rect(CULL_MARGIN);
     for (int y = r.y; y <= r.w; y++) {
         for (int x = r.x; x <= r.z; x++) {
-            batch.push(glm::vec2((float)x, (float)y), glm::vec2((float)x + 1.0f, (float)y + 1.0f), glm::vec2(0.0f), glm::vec2(1.0f), rgba(255, 255, 255));
+            sprite_batch.push(glm::vec2((float)x, (float)y), glm::vec2((float)x + 1.0f, (float)y + 1.0f), glm::vec2(0.0f), glm::vec2(1.0f), rgba(255, 255, 255));
         }
     }
-    batch.flush();
+    sprite_batch.flush();
 
+    light_batch.begin();
+    light_batch.push({ glm::vec2(0), 12.0f, rgba(255,200,120) });
+    light_batch.upload();
+
+    post_index = 0;
+    uint32_t input = scene_color;
+    for (uint32_t program : post_programs) {
+        uint32_t output = post_color[post_index];
+        glUseProgram(program);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, light_batch.ssbo);
+        glBindImageTexture(0, input, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8);
+        glBindImageTexture(1, output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
+        uint32_t groups_x = (width + 7) / 8;
+        uint32_t groups_y = (height + 7) / 8;
+        glDispatchCompute(groups_x, groups_y, 1);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        input = output;
+        post_index ^= 1;
+    }
+    
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDisable(GL_BLEND);
-    glClearColor(0, 0, 0, 1);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    glBindVertexArray(temp_vao);
     glUseProgram(blit_program);
-    glBindTextureUnit(0, out_color);
+    glBindTextureUnit(0, input);
+    glBindVertexArray(temp_vao);
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
-    batch.end_frame();
+    sprite_batch.end_frame();
+    light_batch.end_frame();
 }

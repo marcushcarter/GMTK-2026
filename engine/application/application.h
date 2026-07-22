@@ -1,5 +1,7 @@
 #pragma once
-#include "window.h"
+#include <application/window.h>
+#include <graphics/renderer.h>
+#include <scene/scene.h>
 #include <string>
 #include <cstdint>
 
@@ -10,9 +12,11 @@ struct ApplicationCI {
 
 struct Application
 {
-    int foo;
-
     Window window;
+    Renderer renderer;
+
+    Scene main_scene;
+    Scene* active_scene = nullptr;
 
     bool create(const ApplicationCI& p_ci);
     void destroy();

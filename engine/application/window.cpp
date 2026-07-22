@@ -45,9 +45,15 @@ bool Window::should_close()
 void Window::poll_events()
 {
     glfwPollEvents();
+    glfwGetWindowSize(window, &width, &height);
 }
 
 void Window::swap_buffers()
 {
     glfwSwapBuffers(window);
+}
+
+void Window::set_title(std::string_view p_title)
+{
+    glfwSetWindowTitle(window, p_title.data());
 }

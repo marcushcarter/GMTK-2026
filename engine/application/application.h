@@ -1,5 +1,6 @@
 #pragma once
 #include <application/window.h>
+#include <application/input.h>
 #include <graphics/renderer.h>
 #include <scene/scene.h>
 #include <string>
@@ -13,10 +14,11 @@ struct ApplicationCI {
 struct Application
 {
     Window window;
+    Input input;
+
     Renderer renderer;
 
-    Scene game_scene;
-    Scene* active_scene = nullptr;
+    Scene scene;
 
     bool create(const ApplicationCI& p_ci);
     void destroy();

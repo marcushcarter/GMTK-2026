@@ -59,13 +59,24 @@ bool Renderer::initialize(Window* p_window)
     glCreateVertexArrays(1, &temp_vao);
 
     {
-    std::string v_s = load_file("assets/shaders/fullscreen.vert");
+    std::string v_s = load_file("assets/shaders/blit.vert");
     uint32_t v = _compile_shader(v_s.c_str(), GL_VERTEX_SHADER);
-    std::string f_s = load_file("assets/shaders/gamma_blit.frag");
+    std::string f_s = load_file("assets/shaders/blit.frag");
     uint32_t f = _compile_shader(f_s.c_str(), GL_FRAGMENT_SHADER);
     uint32_t shaders[] = { v, f };
     blit_program = _create_program(shaders, 2);
     }
+
+    {
+    std::string v_s = load_file("assets/shaders/sprite.vert");
+    uint32_t v = _compile_shader(v_s.c_str(), GL_VERTEX_SHADER);
+    std::string f_s = load_file("assets/shaders/sprite.frag");
+    uint32_t f = _compile_shader(f_s.c_str(), GL_FRAGMENT_SHADER);
+    uint32_t shaders[] = { v, f };
+    sprite_program = _create_program(shaders, 2);
+    }
+
+    if (!batch.initialize()) return false;
 
     request_resize(p_window->width, p_window->height);
     set_size();
@@ -75,12 +86,15 @@ bool Renderer::initialize(Window* p_window)
 
 void Renderer::shutdown()
 {
+    batch.shutdown();
+
     glDeleteVertexArrays(1, &temp_vao);
 
     glDeleteFramebuffers(1, &out_framebuffer);
     glDeleteTextures(1, &out_color);
 
     glDeleteProgram(blit_program);
+    glDeleteProgram(sprite_program);
 }
 
 void Renderer::request_resize(uint32_t w, uint32_t h)
@@ -113,28 +127,47 @@ void Renderer::set_size()
 }
 
 void Renderer::render(Scene* scene)
-{
-    (void)scene;
-    
-    if (resize_requested) {
-        set_size();
-    }
+{    
+    if (resize_requested) set_size();
 
-    glViewport(0,0,width,height);
+    glViewport(0, 0, width, height);
 
     glBindFramebuffer(GL_FRAMEBUFFER, out_framebuffer);
-    glClearColor(1,0,0,1);
-    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-    
+    glClearColor(0.055f, 0.043f, 0.055f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
+    float scale_offset[4];
+    scene->camera.clip_transform(scale_offset);
+
+    glUseProgram(sprite_program);
+    glUniform4fv(0, 1, scale_offset);
+
+    batch.begin();
+    int x0, y0, x1, y1;
+    scene->camera.visible_tile_rect(CULL_MARGIN, x0, y0, x1, y1);
+    for (int y = y0; y <= y1; y++) {
+        for (int x = x0; x <= x1; x++) {
+            uint32_t tint = ((x ^ y) & 1) ? rgba(255, 255, 255) : rgba(255, 255, 255);
+            batch.push((float)x, (float)y, (float)x + 1.0f, (float)y + 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, tint);
+        }
+    }
+    batch.flush();
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glClearColor(1,0,1,1);
-    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+    glDisable(GL_BLEND);
+    glClearColor(0, 0, 0, 1);
+    glClear(GL_COLOR_BUFFER_BIT);
 
     glBindVertexArray(temp_vao);
     glUseProgram(blit_program);
     glBindTextureUnit(0, out_color);
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
-    // render
+    batch.end_frame();
 
 }

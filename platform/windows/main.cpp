@@ -6,7 +6,7 @@ int main()
     std::cout << "Hello, World\n";
 
     ApplicationCI ci;
-    ci.title = "NEW GAME";
+    ci.title = "The Machine";
     ci.w = 1280;
     ci.h = 720;
 

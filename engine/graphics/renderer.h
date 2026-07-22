@@ -1,4 +1,5 @@
 #pragma once
+#include <graphics/sprite_batch.h>
 #include <glad/glad.h>
 #include <cstdint>
 
@@ -15,9 +16,11 @@ struct Renderer
     uint32_t out_framebuffer = 0;
 
     uint32_t blit_program = 0;
-    // uint32_t tile_program = 0;
+    uint32_t sprite_program = 0;
 
     uint32_t temp_vao = 0;
+
+    SpriteBatch batch;
 
     bool initialize(Window* p_window);
     void shutdown();

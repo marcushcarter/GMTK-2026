@@ -10,10 +10,9 @@
 bool Application::create(const ApplicationCI& p_ci)
 {
     window.create(p_ci.title, p_ci.w, p_ci.h);
+    glfwSetScrollCallback(window.window, input_scroll_callback);
     renderer.initialize(&window);
-    
-    game_scene.initialize();
-    active_scene = &game_scene;
+    scene.initialize();
 
 #ifdef DEV_TOOLS
     IMGUI_CHECKVERSION();
@@ -34,7 +33,7 @@ void Application::destroy()
     ImGui::DestroyContext();
 #endif
 
-    game_scene.shutdown();
+    scene.shutdown();
 
     renderer.shutdown();
     window.destroy();
@@ -44,9 +43,11 @@ void Application::run()
 {
     while (!window.should_close()) {
         window.poll_events();
+        input.poll(window.window);
+        
         renderer.request_resize(window.width, window.height);
 
-        window.set_title(std::to_string(1.0f / active_scene->dt));
+        window.set_title(std::to_string(1.0f / scene.dt));
 
 #ifdef DEV_TOOLS
         ImGui_ImplOpenGL3_NewFrame();
@@ -55,8 +56,8 @@ void Application::run()
         _draw_ui();
 #endif
 
-        active_scene->update();
-        renderer.render(active_scene);
+        scene.update(input, renderer.width, renderer.height);
+        renderer.render(&scene);
 
 #ifdef DEV_TOOLS
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -73,13 +74,13 @@ void Application::run()
 // #ifdef DEV_TOOLS
 void Application::_draw_ui()
 {
-    ImGui::ShowDemoWindow();
+    // ImGui::ShowDemoWindow();
 
-    ImGui::Begin("Image Test");
-    ImGui::Text("size = %d x %d", renderer.width, renderer.height);
-    ImGui::Image((ImTextureID)(intptr_t)renderer.out_color,
-    ImVec2(renderer.width/10.0f, renderer.height/10.0f));
-    ImGui::End();
+    // ImGui::Begin("Image Test");
+    // ImGui::Text("size = %d x %d", renderer.width, renderer.height);
+    // ImGui::Image((ImTextureID)(intptr_t)renderer.out_color,
+    // ImVec2(renderer.width/2.0f, renderer.height/2.0f));
+    // ImGui::End();
 
 }
 // #endif

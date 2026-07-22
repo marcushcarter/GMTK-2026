@@ -1,5 +1,6 @@
 #pragma once
 #include "camera.h"
+#include "world.h"
 #include <chrono>
 
 struct Input;
@@ -10,9 +11,9 @@ struct Scene
     float dt = 0.0f;
 
     Camera camera;
+    World world;
 
     bool initialize();
     void shutdown();
-
     void update(const Input& in, uint32_t viewport_w, uint32_t viewport_h);
 };

@@ -26,18 +26,22 @@ bool SpriteBatch::initialize()
 
     glCreateVertexArrays(1, &vao);
     glVertexArrayElementBuffer(vao, ibo);
-
+    
     glEnableVertexArrayAttrib (vao, 0);
-    glVertexArrayAttribFormat (vao, 0, 2, GL_FLOAT, GL_FALSE, offsetof(SpriteVertex, x));
+    glVertexArrayAttribFormat (vao, 0, 2, GL_FLOAT, GL_FALSE, offsetof(SpriteVertex, pos));
     glVertexArrayAttribBinding(vao, 0, 0);
 
     glEnableVertexArrayAttrib (vao, 1);
-    glVertexArrayAttribFormat (vao, 1, 2, GL_FLOAT, GL_FALSE, offsetof(SpriteVertex, u));
+    glVertexArrayAttribFormat (vao, 1, 2, GL_FLOAT, GL_FALSE, offsetof(SpriteVertex, uv));
     glVertexArrayAttribBinding(vao, 1, 0);
 
     glEnableVertexArrayAttrib (vao, 2);
     glVertexArrayAttribFormat (vao, 2, 4, GL_UNSIGNED_BYTE, GL_TRUE, offsetof(SpriteVertex, color));
     glVertexArrayAttribBinding(vao, 2, 0);
+
+    glEnableVertexArrayAttrib  (vao, 3);
+    glVertexArrayAttribIFormat (vao, 3, 1, GL_UNSIGNED_INT, offsetof(SpriteVertex, tex));
+    glVertexArrayAttribBinding (vao, 3, 0);
 
     return true;
 }
@@ -64,24 +68,33 @@ void SpriteBatch::begin()
     count = 0;
 }
 
-void SpriteBatch::push(float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1, uint32_t color)
+void SpriteBatch::push(glm::vec2 min, glm::vec2 max, glm::vec2 uv_min, glm::vec2 uv_max, uint32_t color, uint32_t tex)
 {
     if (count >= MAX_SPRITES) return;
-    write[0] = { x0, y0, u0, v0, color };
-    write[1] = { x1, y0, u1, v0, color };
-    write[2] = { x1, y1, u1, v1, color };
-    write[3] = { x0, y1, u0, v1, color };
+    write[0] = { {min.x, min.y}, {uv_min.x, uv_min.y}, color, tex };
+    write[1] = { {max.x, min.y}, {uv_max.x, uv_min.y}, color, tex };
+    write[2] = { {max.x, max.y}, {uv_max.x, uv_max.y}, color, tex };
+    write[3] = { {min.x, max.y}, {uv_min.x, uv_max.y}, color, tex };
     write += 4;
     count++;
 }
 
+// void SpriteBatch::push(glm::vec2 min, glm::vec2 max, const SpriteRegion& r, uint32_t color)
+// {
+//     push(min, max, r.uv_min, r.uv_max, color, r.tex);
+// }
+
+// void SpriteBatch::push_sprite(glm::vec2 origin, const SpriteRegion& r, uint32_t color)
+// {
+//     glm::vec2 min = origin + r.offset;
+//     push(min, min + r.size, r.uv_min, r.uv_max, color, r.tex);
+// }
+
 void SpriteBatch::flush()
 {
     if (count == 0) return;
-
     GLintptr offset = (GLintptr)((size_t)frame * MAX_VERTS * sizeof(SpriteVertex));
     glVertexArrayVertexBuffer(vao, 0, vbo, offset, sizeof(SpriteVertex));
-
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, (GLsizei)(count * 6), GL_UNSIGNED_INT, nullptr);
 }

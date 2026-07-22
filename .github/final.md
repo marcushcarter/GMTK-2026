@@ -64,7 +64,32 @@ TIels:
 -wires (moves power, has capacity of current (too many items plugged into the outlet))
 -pipes (moves water)
 -conveyor (moves resources)
+-power lines (requires tower)
 
 -storage (stores materials, can get clogged)
 
 eather system like BOTW where just simple stuff like cloudy, rainy etc
+
+
+
+CONTROLS
+
+-based on factorio
+-WASD to move
+-R to rotate
+-E to select and open inventroy screen
+-F to center whole world in window
+-ALT toggle additional info mode
+
+
+
+
+everything is on one layer
+
+
+
+MAIN MENU
+-play
+-continue
+-
+

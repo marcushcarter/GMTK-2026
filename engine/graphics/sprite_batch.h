@@ -1,14 +1,16 @@
 #pragma once
 #include <glad/glad.h>
+#include <glm/glm.hpp>
 #include <cstdint>
 #include <cstddef>
 
-struct SpriteVertex
-{
-    float x, y;
-    float u, v;
+struct SpriteVertex {
+    glm::vec2 pos;
+    glm::vec2 uv;
     uint32_t color;
+    uint32_t tex;
 };
+static_assert(sizeof(SpriteVertex) == 24, "SpriteVertex must stay tightly packed");
 
 inline uint32_t rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) {
     return (uint32_t)r | ((uint32_t)g << 8) | ((uint32_t)b << 16) | ((uint32_t)a << 24);
@@ -33,7 +35,7 @@ struct SpriteBatch
     void shutdown();
 
     void begin();
-    void push(float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1, uint32_t color);
+    void push(glm::vec2 min, glm::vec2 max, glm::vec2 uv_min, glm::vec2 uv_max, uint32_t color, uint32_t tex = 0);
     void flush();
     void end_frame();
 };

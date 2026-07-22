@@ -1,7 +1,9 @@
 #include "renderer.h"
 #include <application/window.h>
 #include <scene/scene.h>
+#include <scene/world.h>
 #include <utils/utils.h>
+#include <glm/gtc/type_ptr.hpp>
 
 uint32_t Renderer::_compile_shader(const char* src, GLenum stage)
 {
@@ -77,6 +79,7 @@ bool Renderer::initialize(Window* p_window)
     }
 
     if (!batch.initialize()) return false;
+    // if (!atlas.initialize_white()) return false;
 
     request_resize(p_window->width, p_window->height);
     set_size();
@@ -85,7 +88,8 @@ bool Renderer::initialize(Window* p_window)
 }
 
 void Renderer::shutdown()
-{
+{   
+    // atlas.shutdown();
     batch.shutdown();
 
     glDeleteVertexArrays(1, &temp_vao);
@@ -133,27 +137,23 @@ void Renderer::render(Scene* scene)
     glViewport(0, 0, width, height);
 
     glBindFramebuffer(GL_FRAMEBUFFER, out_framebuffer);
-    glClearColor(0.055f, 0.043f, 0.055f, 1.0f);
+    glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-    float scale_offset[4];
-    scene->camera.clip_transform(scale_offset);
-
+    glm::vec4 scale_offset = scene->camera.clip_transform();
     glUseProgram(sprite_program);
-    glUniform4fv(0, 1, scale_offset);
+    glUniform4fv(0, 1, glm::value_ptr(scale_offset));
+    // glBindTextureUnit(0, atlas.texture.id);
 
     batch.begin();
-    int x0, y0, x1, y1;
-    scene->camera.visible_tile_rect(CULL_MARGIN, x0, y0, x1, y1);
-    for (int y = y0; y <= y1; y++) {
-        for (int x = x0; x <= x1; x++) {
-            uint32_t tint = ((x ^ y) & 1) ? rgba(255, 255, 255) : rgba(255, 255, 255);
-            batch.push((float)x, (float)y, (float)x + 1.0f, (float)y + 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, tint);
+    glm::ivec4 r = scene->camera.visible_tile_rect(CULL_MARGIN);
+    for (int y = r.y; y <= r.w; y++) {
+        for (int x = r.x; x <= r.z; x++) {
+            batch.push(glm::vec2((float)x, (float)y), glm::vec2((float)x + 1.0f, (float)y + 1.0f), glm::vec2(0.0f), glm::vec2(1.0f), rgba(255, 255, 255));
         }
     }
     batch.flush();
@@ -169,5 +169,4 @@ void Renderer::render(Scene* scene)
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
     batch.end_frame();
-
 }

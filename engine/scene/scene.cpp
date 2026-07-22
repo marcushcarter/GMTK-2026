@@ -2,6 +2,7 @@
 #include <application/input.h>
 
 bool Scene::initialize() {
+    world.generate(1337); // eventually random
     return true;
 }
 
@@ -17,6 +18,6 @@ void Scene::update(const Input& in, uint32_t viewport_w, uint32_t viewport_h)
     last = now;
     if (dt > 0.1f) dt = 0.1f;
 
-    camera.set_viewport((float)viewport_w, (float)viewport_h);
+    camera.set_viewport(glm::vec2((float)viewport_w, (float)viewport_h));
     camera.update(in, dt);
 }
